@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+/COMP4300_001.sln
+/COMP4300_001.vcxproj
+/COMP4300_001.vcxproj.filters
+/COMP4300_001.vcxproj.user
+/x64
+/.vs/COMP4300_001
