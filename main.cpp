@@ -11,90 +11,96 @@
 
 
 int main(int argc, char* argv[]) {
-	// Specify the file path
-	std::string filePath = "config/example.txt";
-
-	// Open the file for writing
-	std::ofstream outputFile(filePath);
-
-	// Check if the file is open
-	if (!outputFile.is_open()) {
-		std::cerr << "Error opening file for writing!" << std::endl;
-		return 1; // Return an error code to indicate failure
-	}
-
-	// Write some content to the file
-	outputFile << "This is an example file created in the config folder.";
-
-	// Close the file
-	outputFile.close();
-
-	std::cout << "File created successfully: " << filePath << std::endl;
-
-	//read file
+	
 	std::string filename = "config/config.txt";
+	std::ifstream config(filename);
 
-	// Check if the file exists
-
-	std::ifstream config;
-	config.open(filename);
-
-	// error handling for failure to open/locate configuration file
 	if (!config.is_open()) {
 		std::cerr << "Error opening configuration file!" << std::endl;
 		exit(-1);
 	}
 
-	//split line by line
-
-	//define variable to store input
-	std::vector<std::vector<std::string>> lines;
+	std::vector<std::vector<int>> circles;
+	std::vector<std::vector<int>> rectangles;
 	std::string line;
 	
 	int wWidth, wHeight;
+
+	std::string fontPath;
+	int fontSize, fontR, fontG, fontB;
 
 	//new block - variables defined within this block do not exist outside hence all useful data must be defined above here
 
 	if (std::getline(config, line)) {
 		std::stringstream ss(line);
-		std::string value;
+		std::string isWindow;
 
-		ss >> value;
-		std::cout << value << std::endl;
+		ss >> isWindow;
 
-		if (value != "Window") {
+		if (isWindow != "Window") {
 			std::cerr << "Error: The configuration file does not specify a window!" << std::endl;
 			exit(-1);
 		}
-
-		//ss >> value;
-		//const int wWidth = std::stoi(value);
-		//const int wHeight = std::stoi(value);
 
 		if (!(ss >> wWidth >> wHeight)) {
 			std::cerr << "Error: The configuration file does not specify a window width and height!" << std::endl;
 			exit(-1);
 		}
 
-		std::cout << wWidth << " " << wHeight << std::endl;
-		std::cout << wHeight << std::endl;
+	}
+
+	if (std::getline(config, line)) {
+		std::stringstream ss(line);
+		std::string isFont;
+
+		ss >> isFont;
+
+		if (isFont != "Font") {
+			std::cerr << "Error: The configuration file does not specify a font!" << std::endl;
+			exit(-1);
+		}
+
+		if (!(ss >> fontPath >> fontSize >> fontR >> fontG >> fontB)) {
+			std::cerr << "Error: The configuration file does not specify correct font data!" << std::endl;
+			exit(-1);
+		}
 
 	}
 
 	while (std::getline(config, line)) {
 		std::stringstream ss(line);
-		std::string value;
+		std::string name;
+		int value;
 
-		std::vector<std::string> values;
-		
-		while (ss >> value) {
-			values.push_back(value);
+		std::vector<int> values;
+
+		ss >> name;
+
+		if (name != "Circle") {
+			ss >> name;
+
+			while (ss >> value) {
+				values.push_back(value);
+			}
+
+			circles.push_back(values);
+		}
+		if (name != "Rectangle") {
+			ss >> name;
+
+			while (ss >> value) {
+				values.push_back(value);
+			}
+
+			rectangles.push_back(values);
+		}
+		else {
+			std::cerr << "Error: The shape data was not properly configured!" << std::endl;
+			exit(-1);
 		}
 
-		lines.push_back(values);
 	}
 	
-	//close configuration file
 	config.close();
 
 	//create window w*h
@@ -195,7 +201,7 @@ int main(int argc, char* argv[]) {
 			ImGui::End();
 
 			//set the circle properties in case of update with the ui
-			circle.setFillColor(sf::Color(c[0] * 255, c[1] * 255, c[2] * 255));
+			circle.setFillColor(sf::Color(c[0] * 255.0f, c[1] * 255.0f, c[2] * 255.0f));
 			circle.setPointCount(circleSegments);
 			circle.setRadius(circleRadius);
 
@@ -245,3 +251,23 @@ int main(int argc, char* argv[]) {
 //
 //    return 0;
 //}
+
+//// Specify the file path
+//std::string filePath = "config/example.txt";
+//
+//// Open the file for writing
+//std::ofstream outputFile(filePath);
+//
+//// Check if the file is open
+//if (!outputFile.is_open()) {
+//	std::cerr << "Error opening file for writing!" << std::endl;
+//	return 1; // Return an error code to indicate failure
+//}
+//
+//// Write some content to the file
+//outputFile << "This is an example file created in the config folder.";
+//
+//// Close the file
+//outputFile.close();
+//
+//std::cout << "File created successfully: " << filePath << std::endl;
