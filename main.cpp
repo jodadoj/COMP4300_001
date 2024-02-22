@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 	sf::Font myFont;
 
 	//loat font from file
-	if (!myFont.loadFromFile("config/wildwordsroman.TTF")) {
+	if (!myFont.loadFromFile(fontPath)) {
 		//if we can't load the font
 		std::cerr << "Could not load font!\n";
 		exit(-1);
