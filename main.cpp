@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 #include <SFML/Graphics.hpp>
 #include "imgui.h"
@@ -16,12 +17,16 @@ int main(int argc, char* argv[]) {
 	std::ifstream config(filename);
 
 	if (!config.is_open()) {
-		std::cerr << "Error opening configuration file!" << std::endl;
+		std::cerr << "Error: cannot open configuration file!" << std::endl;
 		exit(-1);
 	}
 
-	std::vector<std::vector<int>> circles;
-	std::vector<std::vector<int>> rectangles;
+	std::unordered_map<std::string, sf::CircleShape> circles;
+	std::unordered_map<std::string, sf::RectangleShape> rectangles;
+	std::vector<std::string> shapeID;
+
+	//std::unordered_map<std::string, std::vector<int>> circleData;
+	//std::unordered_map<std::string, std::vector<int>> rectangleData;
 	std::string line;
 	
 	int wWidth, wHeight;
@@ -69,30 +74,44 @@ int main(int argc, char* argv[]) {
 
 	while (std::getline(config, line)) {
 		std::stringstream ss(line);
-		std::string name;
+		std::string shapeType;
 		int value;
 
 		std::vector<int> values;
 
-		ss >> name;
+		ss >> shapeType;
 
-		if (name != "Circle") {
-			ss >> name;
+		if (shapeType == "Circle") {
+			std::string name;
+			float circleRadius;
+			int circleSegments;
+			float circleSpeedX;
+			float circleSpeedY;
 
-			while (ss >> value) {
-				values.push_back(value);
-			}
+			ss >> name >> circleRadius >> circleSegments >> circleSpeedX >> circleSpeedY;
 
-			circles.push_back(values);
+			shapeID.push_back(name);
+
+			//create the sfml circle
+			sf::CircleShape circle(circleRadius, circleSegments);
+			circle.setPosition(0.0f, 10.0f);
+
+			circles[name] = circle;
 		}
-		if (name != "Rectangle") {
-			ss >> name;
+		else if (shapeType == "Rectangle") {
+			std::string name;
 
-			while (ss >> value) {
-				values.push_back(value);
-			}
+			float rectWidth;
+			float rectHeight;
+			float rectSpeedX;
+			float rectSpeedY;
 
-			rectangles.push_back(values);
+
+			ss >> name >> rectWidth >> rectHeight >> rectSpeedX >> rectSpeedY;
+
+			sf::RectangleShape rect(sf::Vector2f(rectWidth, rectHeight));
+
+			rectangles[name] = rect;
 		}
 		else {
 			std::cerr << "Error: The shape data was not properly configured!" << std::endl;
@@ -119,11 +138,18 @@ int main(int argc, char* argv[]) {
 	//the imgui color wheel RGB requires floats from 0-1 rather than 0-255
 	float c[3] = { 0.0f, 1.0f, 1.0f }; //RGB
 
+	//for (const auto& circle : circles) {
+		//for (int value : circleData.second) {
+
+
+		//}
+	//}
+
 	//make shape
 	float circleRadius = 50;
 	int circleSegments = 32;
-	float circleSpeedX = 1.0f;
-	float circleSpeedY = 0.5f;
+	float circleSpeedX = 5.0f;
+	float circleSpeedY = 2.5f;
 	bool drawCircle = true;
 	bool drawText = true;
 
@@ -145,7 +171,8 @@ int main(int argc, char* argv[]) {
 	sf::Text text("Sample Text", myFont, 24);
 
 	//put text in bottom and shift up by height
-	text.setPosition(0, wHeight - (float)text.getCharacterSize());
+	text.setPosition(circle.getPosition().x, 
+		circle.getPosition().y  - (float)text.getCharacterSize());
 
 	//set up char array for text
 	char displayString[255] = "Sample text";
@@ -208,6 +235,18 @@ int main(int argc, char* argv[]) {
 			//basic animation
 			//move each frame if in fram
 			circle.setPosition(circle.getPosition().x + circleSpeedX, circle.getPosition().y + circleSpeedY);
+
+			text.setPosition(circle.getPosition().x,
+				circle.getPosition().y - (float)text.getCharacterSize());
+
+			if (circle.getPosition().x < 0 ||
+				circle.getPosition().x + 2*circleRadius > wWidth) {
+				circleSpeedX = -circleSpeedX;
+			}
+			if (circle.getPosition().y < 0 ||
+				circle.getPosition().y + 2*circleRadius > wHeight) {
+				circleSpeedY = -circleSpeedY;
+			}
 
 			// basic rendering
 			window.clear(); 
