@@ -16,17 +16,30 @@ int main(int argc, char* argv[]) {
 	std::string filename = "config/config.txt";
 	std::ifstream config(filename);
 
+	/*
+	Config file layout - any order
+		Window 
+			Width	Height
+		Font
+			Filepath	Font size	 RGB
+		Rectangle
+			Shape name	 Initial X,Y	 Initial speed X,Y	 RGB	 Width	 Height
+		Circle
+			Shape name	 Initial X,Y	 Initial speed X,Y	 RGB	 Radius
+	*/
+
 	if (!config.is_open()) {
 		std::cerr << "Error: cannot open configuration file!" << std::endl;
 		exit(-1);
 	}
 
+	//the list of shapes to be rendered - currently required unique IDs
+	std::unordered_map<std::string, std::string> shapeText;
 	std::unordered_map<std::string, sf::CircleShape> circles;
 	std::unordered_map<std::string, sf::RectangleShape> rectangles;
-	std::vector<std::string> shapeID;
+	std::unordered_map<std::string, std::vector<float>> circleData;
+	std::unordered_map<std::string, std::vector<float>> rectangleData;
 
-	//std::unordered_map<std::string, std::vector<int>> circleData;
-	//std::unordered_map<std::string, std::vector<int>> rectangleData;
 	std::string line;
 	
 	int wWidth, wHeight;
@@ -34,45 +47,10 @@ int main(int argc, char* argv[]) {
 	std::string fontPath;
 	int fontSize, fontR, fontG, fontB;
 
-	//new block - variables defined within this block do not exist outside hence all useful data must be defined above here
-
-	if (std::getline(config, line)) {
-		std::stringstream ss(line);
-		std::string isWindow;
-
-		ss >> isWindow;
-
-		if (isWindow != "Window") {
-			std::cerr << "Error: The configuration file does not specify a window!" << std::endl;
-			exit(-1);
-		}
-
-		if (!(ss >> wWidth >> wHeight)) {
-			std::cerr << "Error: The configuration file does not specify a window width and height!" << std::endl;
-			exit(-1);
-		}
-
-	}
-
-	if (std::getline(config, line)) {
-		std::stringstream ss(line);
-		std::string isFont;
-
-		ss >> isFont;
-
-		if (isFont != "Font") {
-			std::cerr << "Error: The configuration file does not specify a font!" << std::endl;
-			exit(-1);
-		}
-
-		if (!(ss >> fontPath >> fontSize >> fontR >> fontG >> fontB)) {
-			std::cerr << "Error: The configuration file does not specify correct font data!" << std::endl;
-			exit(-1);
-		}
-
-	}
-
+	//new block - variables defined within this block do not exist outside
+	//all useful data must be defined above here - below are temp variables
 	while (std::getline(config, line)) {
+		int count = 1;
 		std::stringstream ss(line);
 		std::string shapeType;
 		int value;
@@ -81,46 +59,68 @@ int main(int argc, char* argv[]) {
 
 		ss >> shapeType;
 
-		if (shapeType == "Circle") {
+		if (shapeType == "Window") {
+			if (!(ss >> wWidth >> wHeight)) {
+				std::cerr << "Error: The configuration file does not specify a window width and height!" << std::endl;
+				exit(-1);
+			}
+		}
+		else if (shapeType == "Font") {
+			if (!(ss >> fontPath >> fontSize >> fontR >> fontG >> fontB)) {
+				std::cerr << "Error: The configuration file does not specify correct font data!" << std::endl;
+				exit(-1);
+			}
+		}
+		else if (shapeType == "Circle") {
 			std::string name;
-			float circleRadius;
-			int circleSegments;
-			float circleSpeedX;
-			float circleSpeedY;
+			float circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB, circleRadius;
 
-			ss >> name >> circleRadius >> circleSegments >> circleSpeedX >> circleSpeedY;
-
-			shapeID.push_back(name);
+			if (!(ss >> name >> circleX >> circleY >> circleSpeedX >> circleSpeedY >>
+				circleR >>circleG >>circleB >> circleRadius)) {
+				std::cerr << "Error: The configuration file does not specify correct circle data!" << std::endl;
+				exit(-1);
+			}
 
 			//create the sfml circle
-			sf::CircleShape circle(circleRadius, circleSegments);
-			circle.setPosition(0.0f, 10.0f);
+			sf::CircleShape circle(circleRadius, 32);
+			circle.setPosition(circleX, circleY);
 
+			circleData[name].insert(circleData[name].end(),
+				{circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB});
 			circles[name] = circle;
+			shapeText[name] = name;
 		}
 		else if (shapeType == "Rectangle") {
 			std::string name;
 
-			float rectWidth;
-			float rectHeight;
-			float rectSpeedX;
-			float rectSpeedY;
+			float rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB, rectWidth, rectHeight;
 
-
-			ss >> name >> rectWidth >> rectHeight >> rectSpeedX >> rectSpeedY;
+			if (!(ss >> name >> rectX >> rectY >> rectSpeedX >> rectSpeedY >> 
+				rectR >> rectG >> rectB >> rectWidth >> rectHeight)) {
+				std::cerr << "Error: The configuration file does not specify correct rectangle data!" << std::endl;
+				exit(-1);
+			}
 
 			sf::RectangleShape rect(sf::Vector2f(rectWidth, rectHeight));
 
+			rectangleData[name].insert(rectangleData[name].end(), 
+				{rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB});
 			rectangles[name] = rect;
+			shapeText[name] = name;
 		}
 		else {
-			std::cerr << "Error: The shape data was not properly configured!" << std::endl;
+			std::cerr << "Error: The shape data was not properly configured with " << 
+				line << " on line " << count << std::endl;
 			exit(-1);
 		}
-
+		count += 1;
+		//can improve logging to include line numbers and config data on fail
 	}
 	
 	config.close();
+
+	//ensures no unnecessary heap memory held in heap before further loops begins
+	//shapeID.shrink_to_fit();
 
 	//create window w*h
 	//top left is 0,0 bot right is w,h
@@ -137,6 +137,12 @@ int main(int argc, char* argv[]) {
 
 	//the imgui color wheel RGB requires floats from 0-1 rather than 0-255
 	float c[3] = { 0.0f, 1.0f, 1.0f }; //RGB
+
+	// #pass by reference into new blocks
+	// - auto x when working with copies and not altering original outside block scope
+	// - auto &x when working with original with persistent alterations outside
+	// - auto const &x when not loading copies OR altering the original
+
 
 	//for (const auto& circle : circles) {
 		//for (int value : circleData.second) {
