@@ -18,13 +18,13 @@ class Rect {
 	bool drawShape, drawText = true;
 
 public:
+	//default constructor with a 0,0 shape
 	Rect() {}
+	//constructor with initializer list
 	Rect(sf::RectangleShape rect, float x_speed, float y_speed, std::string id, 
 		std::string label, bool showShape = true, bool showText = true) : 
 		shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
-		drawShape(showShape), drawText(showText) {
-
-	}
+		drawShape(showShape), drawText(showText) {}
 
 	sf::RectangleShape getShape() {
 		return shape;
@@ -164,15 +164,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	//the list of shapes to be rendered - currently required unique IDs
-	//std::unordered_map<std::string, std::string> shapeText;
 	std::unordered_map<std::string, Circle> circles;
 	std::unordered_map<std::string, Rect> rects;
 
-
-	//std::unordered_map<std::string, sf::circleshape> circles;
-	//std::unordered_map<std::string, sf::rectangleshape> rectangles;
-	//std::unordered_map<std::string, std::vector<float>> circleData;
-	//std::unordered_map<std::string, std::vector<float>> rectangleData;
 
 	std::string line;
 	
@@ -220,14 +214,11 @@ int main(int argc, char* argv[]) {
 			circle.setPosition(circleX, circleY);
 			circle.setFillColor(sf::Color(circleR, circleG, circleB));
 
-			//circleData[name].insert(circleData[name].end(),
-			//	{circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB});
-
-			//create new circle
+			//create new circle in custom class
 			Circle newCircle(circle, circleSpeedX, circleSpeedY, name, name);
 
+			//add to our map
 			circles.emplace(name, newCircle);
-			//shapeText[name] = name;
 		}
 		else if (shapeType == "Rectangle") {
 			std::string name;
@@ -244,12 +235,9 @@ int main(int argc, char* argv[]) {
 			rect.setPosition(rectX, rectY);
 			rect.setFillColor(sf::Color(rectR, rectG, rectB));
 
-			//rectangleData[name].insert(rectangleData[name].end(), 
-			//	{rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB});
 			Rect newRect(rect, rectSpeedX, rectSpeedY, name, name);
 
 			rects.emplace(name, newRect);
-			//shapeText[name] = name;
 		}
 		else {
 			std::cerr << "Error: The shape data was not properly configured with " << 
@@ -261,9 +249,6 @@ int main(int argc, char* argv[]) {
 	}
 	
 	config.close();
-
-	//ensures no unnecessary memory held in before further loops begins
-	//shapeID.shrink_to_fit();
 
 	//create window w*h
 	//top left is 0,0 bot right is w,h
@@ -280,19 +265,6 @@ int main(int argc, char* argv[]) {
 
 	//the imgui color wheel RGB requires floats from 0-1 rather than 0-255
 	float c[3] = { 0.0f, 1.0f, 1.0f }; //RGB
-
-	// #pass by reference into new blocks
-	// - auto x when working with copies and not altering original outside block scope
-	// - auto &x when working with original with persistent alterations outside
-	// - auto const &x when not loading copies OR altering the original
-
-
-	//for (const auto& circle : circles) {
-		//for (int value : circleData.second) {
-
-
-		//}
-	//}
 
 	//make shape
 	float circleRadius = 50;
@@ -399,42 +371,49 @@ int main(int argc, char* argv[]) {
 
 			// basic rendering
 			window.clear(); 
+
+			// #pass by reference into new blocks
+			// - auto x when working with copies and not altering original outside block scope
+			// - auto &x when working with original with persistent alterations outside
+			// - auto const &x when not loading copies OR altering the original
 			for (auto& circleData : circles) {
-				if (circleData.second.getDrawShape()) {
-					circleData.second.setShapePosition(
-						circleData.second.getXSpeed() + circleData.second.getShapePosition().x,
-						circleData.second.getYSpeed() + circleData.second.getShapePosition().y
+				Circle& curr = circleData.second;
+				if (curr.getDrawShape()) {
+					curr.setShapePosition(
+						curr.getXSpeed() + curr.getShapePosition().x,
+						curr.getYSpeed() + curr.getShapePosition().y
 					);
-					if (circleData.second.getShapePosition().x < 0 ||
-						circleData.second.getShapePosition().x + 
-						2 * circleData.second.getShape().getRadius() > wWidth) {
-						circleData.second.setXSpeed(-circleData.second.getXSpeed());
+					if (curr.getShapePosition().x < 0 ||
+						curr.getShapePosition().x + 
+						2 * curr.getShape().getRadius() > wWidth) {
+						curr.setXSpeed(-curr.getXSpeed());
 					}
-					if (circleData.second.getShapePosition().y < 0 ||
-						circleData.second.getShapePosition().y + 
-						2 * circleData.second.getShape().getRadius() > wHeight) {
-						circleData.second.setYSpeed(-circleData.second.getYSpeed());
+					if (curr.getShapePosition().y < 0 ||
+						curr.getShapePosition().y + 
+						2 * curr.getShape().getRadius() > wHeight) {
+						curr.setYSpeed(-curr.getYSpeed());
 					}
-					window.draw(circleData.second.getShape());
+					window.draw(curr.getShape());
 				}
 			}
 			for (auto& rectData : rects) {
-				if (rectData.second.getDrawShape()) {
-					rectData.second.setShapePosition(
-						rectData.second.getXSpeed() + rectData.second.getShapePosition().x,
-						rectData.second.getYSpeed() + rectData.second.getShapePosition().y
+				Rect& curr = rectData.second;
+				if (curr.getDrawShape()) {
+					curr.setShapePosition(
+						curr.getXSpeed() + curr.getShapePosition().x,
+						curr.getYSpeed() + curr.getShapePosition().y
 					);
-					if (rectData.second.getShapePosition().x < 0 ||
-						rectData.second.getShapePosition().x + 
-						rectData.second.getShape().getLocalBounds().width > wWidth) {
-						rectData.second.setXSpeed(-rectData.second.getXSpeed());
+					if (curr.getShapePosition().x < 0 ||
+						curr.getShapePosition().x + 
+						curr.getShape().getLocalBounds().width > wWidth) {
+						curr.setXSpeed(-curr.getXSpeed());
 					}
-					if (rectData.second.getShapePosition().y < 0 ||
-						rectData.second.getShapePosition().y + 
-						rectData.second.getShape().getLocalBounds().height > wHeight) {
-						rectData.second.setYSpeed(-rectData.second.getYSpeed());
+					if (curr.getShapePosition().y < 0 ||
+						curr.getShapePosition().y + 
+						curr.getShape().getLocalBounds().height > wHeight) {
+						curr.setYSpeed(-curr.getYSpeed());
 					}
-					window.draw(rectData.second.getShape());
+					window.draw(curr.getShape());
 				}
 			}
 			if (drawCircle) {
@@ -497,3 +476,7 @@ int main(int argc, char* argv[]) {
 //outputFile.close();
 //
 //std::cout << "File created successfully: " << filePath << std::endl;
+
+
+	//ensures no unnecessary memory held in before further loops begins
+	//shapeID.shrink_to_fit(); //unused, leaving note in case of a new vector/arraylist
