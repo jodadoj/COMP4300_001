@@ -21,9 +21,9 @@ public:
 	//default constructor with a 0,0 shape
 	Rect() {}
 	//constructor with initializer list
-	Rect(sf::RectangleShape rect, float x_speed, float y_speed, std::string id, 
-		std::string label, bool showShape = true, bool showText = true) : 
-		shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+	Rect(sf::RectangleShape rect, float x_speed, float y_speed, std::string id,
+		std::string label, bool showShape = true, bool showText = true) :
+		shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label),
 		drawShape(showShape), drawText(showText) {}
 
 	sf::RectangleShape getShape() {
@@ -85,14 +85,14 @@ class Circle {
 
 public:
 	Circle() {}
-	Circle(sf::CircleShape circle, float x_speed, float y_speed, std::string id, 
-		std::string label, bool showShape= true, bool showText = true) :
-		shape(circle), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+	Circle(sf::CircleShape circle, float x_speed, float y_speed, std::string id,
+		std::string label, bool showShape = true, bool showText = true) :
+		shape(circle), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label),
 		drawShape(showShape), drawText(showText) {
 
 	}
 
-	sf::CircleShape getShape(){
+	sf::CircleShape getShape() {
 		return shape;
 	}
 	float getXSpeed() {
@@ -142,13 +142,13 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-	
+
 	std::string filename = "config/config.txt";
 	std::ifstream config(filename);
 
 	/*
 	Config file layout - any order
-		Window 
+		Window
 			Width	Height
 		Font
 			Filepath	Font size	 RGB
@@ -163,13 +163,14 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
-	//the list of shapes to be rendered - currently required unique IDs
+	//the list of shapes to be rendered - currently require unique IDs
 	std::unordered_map<std::string, Circle> circles;
 	std::unordered_map<std::string, Rect> rects;
+	std::unordered_map<std::string, sf::Text> labels;
 
 
 	std::string line;
-	
+
 	int wWidth, wHeight;
 
 	std::string fontPath;
@@ -204,7 +205,7 @@ int main(int argc, char* argv[]) {
 			float circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB, circleRadius;
 
 			if (!(ss >> name >> circleX >> circleY >> circleSpeedX >> circleSpeedY >>
-				circleR >>circleG >>circleB >> circleRadius)) {
+				circleR >> circleG >> circleB >> circleRadius)) {
 				std::cerr << "Error: The configuration file does not specify correct circle data!" << std::endl;
 				exit(-1);
 			}
@@ -225,7 +226,7 @@ int main(int argc, char* argv[]) {
 
 			float rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB, rectWidth, rectHeight;
 
-			if (!(ss >> name >> rectX >> rectY >> rectSpeedX >> rectSpeedY >> 
+			if (!(ss >> name >> rectX >> rectY >> rectSpeedX >> rectSpeedY >>
 				rectR >> rectG >> rectB >> rectWidth >> rectHeight)) {
 				std::cerr << "Error: The configuration file does not specify correct rectangle data!" << std::endl;
 				exit(-1);
@@ -240,14 +241,14 @@ int main(int argc, char* argv[]) {
 			rects.emplace(name, newRect);
 		}
 		else {
-			std::cerr << "Error: The shape data was not properly configured with " << 
+			std::cerr << "Error: The shape data was not properly configured with " <<
 				line << " on line " << count << std::endl;
 			exit(-1);
 		}
 		count += 1;
 		//can improve logging to include line numbers and config data on fail
 	}
-	
+
 	config.close();
 
 	//create window w*h
@@ -289,17 +290,37 @@ int main(int argc, char* argv[]) {
 	}
 
 	//set up text object
-	sf::Text text("Sample Text", myFont, 24);
+	sf::Text text("Sample Text", myFont, 10);
 
 	//put text in bottom and shift up by height
-	text.setPosition(circle.getPosition().x, 
-		circle.getPosition().y  - (float)text.getCharacterSize());
+	text.setPosition(circle.getPosition().x + circle.getRadius() - text.getLocalBounds().width / 2,
+		circle.getPosition().y + circle.getRadius() - text.getLocalBounds().height / 2);
 
 	//set up char array for text
 	char displayString[255] = "Sample text";
 
+
+
+	for (auto& rectData : rects) {
+		sf::RectangleShape curr = rectData.second.getShape();
+		std::string name = rectData.first;
+
+		labels.emplace(name, sf::Text(name, myFont, 10));
+		labels[name].setPosition(
+			curr.getPosition().x + curr.getLocalBounds().width / 2 - labels[name].getLocalBounds().width / 2,
+			curr.getPosition().y + curr.getLocalBounds().height / 2 - labels[name].getLocalBounds().height / 2);
+	}	for (auto& circleData : circles) {
+		sf::CircleShape curr = circleData.second.getShape();
+		std::string name = circleData.first;
+
+		labels.emplace(name, sf::Text(name, myFont, 10));
+		labels[name].setPosition(
+			curr.getPosition().x + curr.getRadius() - labels[name].getLocalBounds().width / 2,
+			curr.getPosition().y + curr.getRadius() - labels[name].getLocalBounds().height / 2);
+	}
+
 	//main loop - renders each frame on window
-	while (window.isOpen()){
+	while (window.isOpen()) {
 		//event handling
 		sf::Event event;
 		while (window.pollEvent(event)) {
@@ -354,29 +375,30 @@ int main(int argc, char* argv[]) {
 			circle.setRadius(circleRadius);
 
 			//basic animation
-			//move each frame if in fram
+			//move circle each frame update is visable
 			circle.setPosition(circle.getPosition().x + circleSpeedX, circle.getPosition().y + circleSpeedY);
 
-			text.setPosition(circle.getPosition().x,
-				circle.getPosition().y - (float)text.getCharacterSize());
+			text.setPosition(circle.getPosition().x + circle.getRadius() - text.getLocalBounds().width / 2,
+				circle.getPosition().y + circle.getRadius() - text.getLocalBounds().height / 2);
 
 			if (circle.getPosition().x < 0 ||
-				circle.getPosition().x + 2*circleRadius > wWidth) {
+				circle.getPosition().x + 2 * circleRadius > wWidth) {
 				circleSpeedX = -circleSpeedX;
 			}
 			if (circle.getPosition().y < 0 ||
-				circle.getPosition().y + 2*circleRadius > wHeight) {
+				circle.getPosition().y + 2 * circleRadius > wHeight) {
 				circleSpeedY = -circleSpeedY;
 			}
 
 			// basic rendering
-			window.clear(); 
+			window.clear();
 
 			// #pass by reference into new blocks
 			// - auto x when working with copies and not altering original outside block scope
 			// - auto &x when working with original with persistent alterations outside
 			// - auto const &x when not loading copies OR altering the original
 			for (auto& circleData : circles) {
+				//make a shorter reference to the actual current shape
 				Circle& curr = circleData.second;
 				if (curr.getDrawShape()) {
 					curr.setShapePosition(
@@ -384,16 +406,24 @@ int main(int argc, char* argv[]) {
 						curr.getYSpeed() + curr.getShapePosition().y
 					);
 					if (curr.getShapePosition().x < 0 ||
-						curr.getShapePosition().x + 
+						curr.getShapePosition().x +
 						2 * curr.getShape().getRadius() > wWidth) {
 						curr.setXSpeed(-curr.getXSpeed());
 					}
 					if (curr.getShapePosition().y < 0 ||
-						curr.getShapePosition().y + 
+						curr.getShapePosition().y +
 						2 * curr.getShape().getRadius() > wHeight) {
 						curr.setYSpeed(-curr.getYSpeed());
 					}
 					window.draw(curr.getShape());
+				}
+				if (curr.getDrawText()) {
+					std::string name = circleData.first;
+					sf::CircleShape currS = circleData.second.getShape();
+					labels[name].setPosition(
+						currS.getPosition().x + currS.getRadius() - labels[name].getLocalBounds().width / 2,
+						currS.getPosition().y + currS.getRadius() - labels[name].getLocalBounds().height / 2);
+					window.draw(labels[name]);
 				}
 			}
 			for (auto& rectData : rects) {
@@ -404,16 +434,24 @@ int main(int argc, char* argv[]) {
 						curr.getYSpeed() + curr.getShapePosition().y
 					);
 					if (curr.getShapePosition().x < 0 ||
-						curr.getShapePosition().x + 
+						curr.getShapePosition().x +
 						curr.getShape().getLocalBounds().width > wWidth) {
 						curr.setXSpeed(-curr.getXSpeed());
 					}
 					if (curr.getShapePosition().y < 0 ||
-						curr.getShapePosition().y + 
+						curr.getShapePosition().y +
 						curr.getShape().getLocalBounds().height > wHeight) {
 						curr.setYSpeed(-curr.getYSpeed());
 					}
 					window.draw(curr.getShape());
+				}
+				if (curr.getDrawText()) {
+					std::string name = rectData.first;
+					sf::RectangleShape currS = rectData.second.getShape();
+					labels[name].setPosition(
+						currS.getPosition().x + currS.getLocalBounds().width / 2 - labels[name].getLocalBounds().width / 2,
+						currS.getPosition().y + currS.getLocalBounds().height / 2 - labels[name].getLocalBounds().height / 2);
+					window.draw(labels[name]);
 				}
 			}
 			if (drawCircle) {
@@ -427,56 +465,21 @@ int main(int argc, char* argv[]) {
 			window.display();
 		}
 
-
 	}
 }
 
-//#include "sfml/graphics.hpp"
-//
-//int main()
-//{
-//    sf::renderwindow window(sf::videomode(800, 800), "window title");
-//    sf::circleshape shape(200.f, 100);
-//    shape.setfillcolor(sf::color(204, 77, 5)); // color circle
-//    shape.setposition(200, 200); // center circle
-//
-//    while (window.isopen())
-//    {
-//        sf::event event;
-//        while (window.pollevent(event))
-//        {
-//            if (event.type == sf::event::closed)
-//                window.close();
-//        }
-//
-//        window.clear(sf::color(18, 33, 43)); // color background
-//        window.draw(shape);
-//        window.display();
-//    }
-//
-//    return 0;
-//}
+/*
+		// Create the dropdown menu
+		if (ImGui::BeginCombo("##combo", items[selectedItemIndex])) {
+			for (int i = 0; i < IM_ARRAYSIZE(items); i++) {
+				bool isSelected = (selectedItemIndex == i);
+				if (ImGui::Selectable(items[i], isSelected))
+					selectedItemIndex = i;
 
-//// Specify the file path
-//std::string filePath = "config/example.txt";
-//
-//// Open the file for writing
-//std::ofstream outputFile(filePath);
-//
-//// Check if the file is open
-//if (!outputFile.is_open()) {
-//	std::cerr << "Error opening file for writing!" << std::endl;
-//	return 1; // Return an error code to indicate failure
-//}
-//
-//// Write some content to the file
-//outputFile << "This is an example file created in the config folder.";
-//
-//// Close the file
-//outputFile.close();
-//
-//std::cout << "File created successfully: " << filePath << std::endl;
-
-
-	//ensures no unnecessary memory held in before further loops begins
-	//shapeID.shrink_to_fit(); //unused, leaving note in case of a new vector/arraylist
+				// Set the initial focus when opening the combo
+				if (isSelected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+*/
