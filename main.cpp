@@ -11,6 +11,106 @@
 #include "imgui-SFML.h"
 
 
+class Rect {
+	sf::RectangleShape Shape;
+	float xSpeed, ySpeed = 0;
+	std::string name, text = "";
+	bool drawShape, drawText = true;
+
+public:
+	Rect() {}
+	Rect(sf::RectangleShape rect, float x_speed, float y_speed, std::string id, 
+		std::string label, bool showShape = true, bool showText = true) : 
+		Shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+		drawShape(showShape), drawText(showText) {
+
+	}
+
+	sf::RectangleShape getShape() {
+		return Shape;
+	}
+	float getXSpeed() {
+		return xSpeed;
+	}
+	float getYSpeed() {
+		return ySpeed;
+	}
+	std::string getName() {
+		return name;
+	}
+	std::string getText() {
+		return text;
+	}
+
+	//believe it is correct to pass by ref the strings and not the floats
+	//floats are max of 4 bytes whereas on 64bit systems this can be 8 for the reference
+	//hence cheaper in resources to just copy the floats but put a memory cap on strings
+	void setXSpeed(const float newXSpeed) {
+		xSpeed = newXSpeed;
+	}
+	void setYSpeed(const float newYSpeed) {
+		ySpeed = newYSpeed;
+	}
+	void setName(const std::string& newName) {
+		name = newName;
+	}
+	void setText(const std::string& newText) {
+		text = newText;
+	}
+
+};
+
+class Circle {
+	sf::CircleShape Shape;
+	float xSpeed, ySpeed = 0;
+	std::string name, text = "";
+	bool drawShape, drawText = true;
+
+public:
+	Circle() {}
+	Circle(sf::CircleShape circle, float x_speed, float y_speed, std::string id, 
+		std::string label, bool showShape= true, bool showText = true) :
+		Shape(circle), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+		drawShape(showShape), drawText(showText) {
+
+	}
+
+	sf::CircleShape getShape(){
+		return Shape;
+	}
+	float getXSpeed() {
+		return xSpeed;
+	}
+	float getYSpeed() {
+		return ySpeed;
+	}
+	std::string getName() {
+		return name;
+	}
+	std::string getText() {
+		return text;
+	}
+
+	void setXSpeed(const float newXSpeed) {
+		xSpeed = newXSpeed;
+	}
+	void setYSpeed(const float newYSpeed) {
+		ySpeed = newYSpeed;
+	}
+	void setName(const std::string& newName) {
+		name = newName;
+	}
+	void setText(const std::string& newText) {
+		text = newText;
+	}
+	void setDrawShape() {
+		drawShape = !drawShape;
+	}
+	void setDrawText() {
+		drawText = !drawText;
+	}
+};
+
 int main(int argc, char* argv[]) {
 	
 	std::string filename = "config/config.txt";
@@ -34,11 +134,15 @@ int main(int argc, char* argv[]) {
 	}
 
 	//the list of shapes to be rendered - currently required unique IDs
-	std::unordered_map<std::string, std::string> shapeText;
-	std::unordered_map<std::string, sf::CircleShape> circles;
-	std::unordered_map<std::string, sf::RectangleShape> rectangles;
-	std::unordered_map<std::string, std::vector<float>> circleData;
-	std::unordered_map<std::string, std::vector<float>> rectangleData;
+	//std::unordered_map<std::string, std::string> shapeText;
+	std::unordered_map<std::string, Circle> circles;
+	std::unordered_map<std::string, Rect> rects;
+
+
+	//std::unordered_map<std::string, sf::circleshape> circles;
+	//std::unordered_map<std::string, sf::rectangleshape> rectangles;
+	//std::unordered_map<std::string, std::vector<float>> circleData;
+	//std::unordered_map<std::string, std::vector<float>> rectangleData;
 
 	std::string line;
 	
@@ -84,11 +188,16 @@ int main(int argc, char* argv[]) {
 			//create the sfml circle
 			sf::CircleShape circle(circleRadius, 32);
 			circle.setPosition(circleX, circleY);
+			circle.setFillColor(sf::Color(circleR, circleG, circleB));
 
-			circleData[name].insert(circleData[name].end(),
-				{circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB});
-			circles[name] = circle;
-			shapeText[name] = name;
+			//circleData[name].insert(circleData[name].end(),
+			//	{circleX, circleY, circleSpeedX, circleSpeedY, circleR, circleG, circleB});
+
+			//create new circle
+			Circle newCircle(circle, circleSpeedX, circleSpeedY, name, name);
+
+			circles.emplace(name, newCircle);
+			//shapeText[name] = name;
 		}
 		else if (shapeType == "Rectangle") {
 			std::string name;
@@ -102,11 +211,15 @@ int main(int argc, char* argv[]) {
 			}
 
 			sf::RectangleShape rect(sf::Vector2f(rectWidth, rectHeight));
+			rect.setPosition(rectX, rectY);
+			rect.setFillColor(sf::Color(rectR, rectG, rectB));
 
-			rectangleData[name].insert(rectangleData[name].end(), 
-				{rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB});
-			rectangles[name] = rect;
-			shapeText[name] = name;
+			//rectangleData[name].insert(rectangleData[name].end(), 
+			//	{rectX, rectY, rectSpeedX, rectSpeedY, rectR, rectG, rectB});
+			Rect newRect(rect, rectSpeedX, rectSpeedY, name, name);
+
+			rects.emplace(name, newRect);
+			//shapeText[name] = name;
 		}
 		else {
 			std::cerr << "Error: The shape data was not properly configured with " << 
@@ -256,6 +369,12 @@ int main(int argc, char* argv[]) {
 
 			// basic rendering
 			window.clear(); 
+			for (auto& circle : circles) {
+				window.draw(circle.second.getShape());
+			}
+			for (auto& rect : rects) {
+				window.draw(rect.second.getShape());
+			}
 			if (drawCircle) {
 				window.draw(circle);
 			}
