@@ -12,7 +12,7 @@
 
 
 class Rect {
-	sf::RectangleShape Shape;
+	sf::RectangleShape shape;
 	float xSpeed, ySpeed = 0;
 	std::string name, text = "";
 	bool drawShape, drawText = true;
@@ -21,13 +21,13 @@ public:
 	Rect() {}
 	Rect(sf::RectangleShape rect, float x_speed, float y_speed, std::string id, 
 		std::string label, bool showShape = true, bool showText = true) : 
-		Shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+		shape(rect), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
 		drawShape(showShape), drawText(showText) {
 
 	}
 
 	sf::RectangleShape getShape() {
-		return Shape;
+		return shape;
 	}
 	float getXSpeed() {
 		return xSpeed;
@@ -40,6 +40,15 @@ public:
 	}
 	std::string getText() {
 		return text;
+	}
+	bool getDrawShape() {
+		return drawShape;
+	}
+	bool getDrawText() {
+		return drawText;
+	}
+	sf::Vector2f getShapePosition() {
+		return shape.getPosition();
 	}
 
 	//believe it is correct to pass by ref the strings and not the floats
@@ -57,11 +66,19 @@ public:
 	void setText(const std::string& newText) {
 		text = newText;
 	}
-
+	void setDrawShape() {
+		drawShape = !drawShape;
+	}
+	void setDrawText() {
+		drawText = !drawText;
+	}
+	void setShapePosition(float x, float y) {
+		shape.setPosition(x, y);
+	}
 };
 
 class Circle {
-	sf::CircleShape Shape;
+	sf::CircleShape shape;
 	float xSpeed, ySpeed = 0;
 	std::string name, text = "";
 	bool drawShape, drawText = true;
@@ -70,13 +87,13 @@ public:
 	Circle() {}
 	Circle(sf::CircleShape circle, float x_speed, float y_speed, std::string id, 
 		std::string label, bool showShape= true, bool showText = true) :
-		Shape(circle), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
+		shape(circle), xSpeed(x_speed), ySpeed(y_speed), name(id), text(label), 
 		drawShape(showShape), drawText(showText) {
 
 	}
 
 	sf::CircleShape getShape(){
-		return Shape;
+		return shape;
 	}
 	float getXSpeed() {
 		return xSpeed;
@@ -90,6 +107,16 @@ public:
 	std::string getText() {
 		return text;
 	}
+	bool getDrawShape() {
+		return drawShape;
+	}
+	bool getDrawText() {
+		return drawText;
+	}
+	sf::Vector2f getShapePosition() {
+		return shape.getPosition();
+	}
+
 
 	void setXSpeed(const float newXSpeed) {
 		xSpeed = newXSpeed;
@@ -108,6 +135,9 @@ public:
 	}
 	void setDrawText() {
 		drawText = !drawText;
+	}
+	void setShapePosition(float x, float y) {
+		shape.setPosition(x, y);
 	}
 };
 
@@ -232,7 +262,7 @@ int main(int argc, char* argv[]) {
 	
 	config.close();
 
-	//ensures no unnecessary heap memory held in heap before further loops begins
+	//ensures no unnecessary memory held in before further loops begins
 	//shapeID.shrink_to_fit();
 
 	//create window w*h
@@ -369,11 +399,43 @@ int main(int argc, char* argv[]) {
 
 			// basic rendering
 			window.clear(); 
-			for (auto& circle : circles) {
-				window.draw(circle.second.getShape());
+			for (auto& circleData : circles) {
+				if (circleData.second.getDrawShape()) {
+					circleData.second.setShapePosition(
+						circleData.second.getXSpeed() + circleData.second.getShapePosition().x,
+						circleData.second.getYSpeed() + circleData.second.getShapePosition().y
+					);
+					if (circleData.second.getShapePosition().x < 0 ||
+						circleData.second.getShapePosition().x + 
+						2 * circleData.second.getShape().getRadius() > wWidth) {
+						circleData.second.setXSpeed(-circleData.second.getXSpeed());
+					}
+					if (circleData.second.getShapePosition().y < 0 ||
+						circleData.second.getShapePosition().y + 
+						2 * circleData.second.getShape().getRadius() > wHeight) {
+						circleData.second.setYSpeed(-circleData.second.getYSpeed());
+					}
+					window.draw(circleData.second.getShape());
+				}
 			}
-			for (auto& rect : rects) {
-				window.draw(rect.second.getShape());
+			for (auto& rectData : rects) {
+				if (rectData.second.getDrawShape()) {
+					rectData.second.setShapePosition(
+						rectData.second.getXSpeed() + rectData.second.getShapePosition().x,
+						rectData.second.getYSpeed() + rectData.second.getShapePosition().y
+					);
+					if (rectData.second.getShapePosition().x < 0 ||
+						rectData.second.getShapePosition().x + 
+						rectData.second.getShape().getLocalBounds().width > wWidth) {
+						rectData.second.setXSpeed(-rectData.second.getXSpeed());
+					}
+					if (rectData.second.getShapePosition().y < 0 ||
+						rectData.second.getShapePosition().y + 
+						rectData.second.getShape().getLocalBounds().height > wHeight) {
+						rectData.second.setYSpeed(-rectData.second.getYSpeed());
+					}
+					window.draw(rectData.second.getShape());
+				}
 			}
 			if (drawCircle) {
 				window.draw(circle);
