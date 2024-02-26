@@ -169,20 +169,20 @@ int main(int argc, char* argv[]) {
 	std::unordered_map<std::string, sf::Text> labels;
 
 
-	std::string line;
+	std::string line = "";
 
-	int wWidth, wHeight;
+	int wWidth, wHeight = 0;
 
-	std::string fontPath;
-	int fontSize, fontR, fontG, fontB;
+	std::string fontPath = "";
+	int fontSize, fontR, fontG, fontB = 0;
 
 	//new block - variables defined within this block do not exist outside
 	//all useful data must be defined above here - below are temp variables
 	while (std::getline(config, line)) {
 		int count = 1;
 		std::stringstream ss(line);
-		std::string shapeType;
-		int value;
+		std::string shapeType = "";
+		int value = 0;
 
 		std::vector<int> values;
 
@@ -299,8 +299,7 @@ int main(int argc, char* argv[]) {
 	//set up char array for text
 	char displayString[255] = "Sample text";
 
-
-
+	//set up text labels
 	for (auto& rectData : rects) {
 		sf::RectangleShape curr = rectData.second.getShape();
 		std::string name = rectData.first;
@@ -309,6 +308,7 @@ int main(int argc, char* argv[]) {
 		labels[name].setPosition(
 			curr.getPosition().x + curr.getLocalBounds().width / 2 - labels[name].getLocalBounds().width / 2,
 			curr.getPosition().y + curr.getLocalBounds().height / 2 - labels[name].getLocalBounds().height / 2);
+
 	}	for (auto& circleData : circles) {
 		sf::CircleShape curr = circleData.second.getShape();
 		std::string name = circleData.first;
@@ -418,8 +418,9 @@ int main(int argc, char* argv[]) {
 					window.draw(curr.getShape());
 				}
 				if (curr.getDrawText()) {
-					std::string name = circleData.first;
-					sf::CircleShape currS = circleData.second.getShape();
+					//const references as not editing, reducing memory overhead while increasing readability
+					const std::string& name = circleData.first;
+					const sf::CircleShape& currS = circleData.second.getShape();
 					labels[name].setPosition(
 						currS.getPosition().x + currS.getRadius() - labels[name].getLocalBounds().width / 2,
 						currS.getPosition().y + currS.getRadius() - labels[name].getLocalBounds().height / 2);
@@ -446,8 +447,8 @@ int main(int argc, char* argv[]) {
 					window.draw(curr.getShape());
 				}
 				if (curr.getDrawText()) {
-					std::string name = rectData.first;
-					sf::RectangleShape currS = rectData.second.getShape();
+					const std::string& name = rectData.first;
+					const sf::RectangleShape& currS = rectData.second.getShape();
 					labels[name].setPosition(
 						currS.getPosition().x + currS.getLocalBounds().width / 2 - labels[name].getLocalBounds().width / 2,
 						currS.getPosition().y + currS.getLocalBounds().height / 2 - labels[name].getLocalBounds().height / 2);
